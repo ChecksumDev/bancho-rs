@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
 use actix_web::{get, App, HttpResponse, HttpServer, Responder, web};
+extern crate futures;
 
 mod middlewares;
 mod routes;

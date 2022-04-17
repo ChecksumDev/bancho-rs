@@ -1,24 +1,44 @@
-// //use crate::constants::privileges::ClientPrivileges;
-// // use constants::packets::*;
-// // use packets::*;
-// // use packets::{PACKET_HANDLERS, RESTRICTED_PACKET_HANDLERS};
-// // use crate::packets::{PACKET_HANDLERS, RESTRICTED_PACKET_HANDLERS};
-// // use crate::utils::LoginResponse;
-// // use actix_web::{error, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
-// // use async_once::AsyncOnce;
-// // use futures_util::stream::StreamExt as _;
-// // use mongodb::{options::ClientOptions, Client};
-// // use std::cell::RefCell;
-// // use std::sync::atomic::{AtomicUsize, Ordering};
-// // use std::sync::Mutex;
-// // use std::{collections::HashMap, collections::HashSet, sync::Arc};
-// // //use structs::player::Player;
-// // use crate::constants::packets::*;
-// // use crate::packets::Reader;
-// // use crate::structs::player::Player;
-// // use crate::utils;
-// // use crate::{PLAYERS, PLAYER_COUNT};
-// // use tokio::net::{TcpListener, TcpStream};
+use actix_web::{error, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder};
+use futures_util::stream::StreamExt as _;
+use crate::utils::osu::packet_reader::PacketReader;
+use crate::utils::osu::packets::{Player, Packets};
+use crate::utils::osu::packets::PACKET_HANDLERS;
+
+pub async fn packet_router(req: HttpRequest, mut body: web::Payload) -> Result<HttpResponse, Error> {
+    let token = match req.headers().get("osu-token") {
+        Some(token) => token.to_str().unwrap(),
+        None => {
+            return Ok(HttpResponse::Ok().body(b"".to_vec()));
+        }
+    };
+
+    let mut bytes = web::BytesMut::new();
+    while let Some(item) = body.next().await {
+        bytes.extend_from_slice(&item?);
+    }
+
+    let bytes: Vec<u8> = bytes.to_vec();
+    
+    let res = handle_stream(bytes, Player{}).await?;
+
+    Ok(HttpResponse::Ok().body(res))
+}
+
+pub async fn handle_stream(data: Vec<u8>, mut player: Player) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut reader = PacketReader::new(data);
+    let packet = unsafe { std::mem::transmute::<i16, Packets>(reader.read_i16()) };
+
+    let res;
+
+    if let Some(handler) = PACKET_HANDLERS.get(&packet) {
+        res = handler(&mut player, &mut reader).await?;
+    } else {
+        res = Vec::new();
+    }
+
+    Ok(res)
+}
+
 
 // pub async fn handle_stream(data: Vec<u8>, mut player: Player) -> Result<HttpResponse, Error> {
 //     let mut _reader = Reader::new(data);
@@ -173,3 +193,5 @@
 //     Ok(handle_stream(bytes, player.to_owned()).await?)
 //     //Ok(HttpResponse::Ok().body("Hello world!"))
 // }
+
+

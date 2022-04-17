@@ -1,6 +1,6 @@
 use std::{convert::TryInto, io::BufRead};
 
-struct PacketReader {
+pub struct PacketReader {
     buffer: Vec<u8>,
 }
 
@@ -291,7 +291,7 @@ impl PacketReader {
         list
     }
 
-    pub fn read_i32_list_i31l(&mut self) -> Vec<i32> {
+    pub fn read_i32_list_i32l(&mut self) -> Vec<i32> {
         let mut list = Vec::new();
         let mut len = self.read_i32();
         while len > 0 {
