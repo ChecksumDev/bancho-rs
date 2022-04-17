@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::packet_reader::{Message, self, PacketReader};
 use futures::future::{BoxFuture, FutureExt};
 
+
 pub type ClientPacketData = Vec<u8>;
 pub struct Player; // TODO: actually make this
 
@@ -173,7 +174,7 @@ pub struct OsuChangeAction {
 
 impl ClientPacket for OsuChangeAction {}
 impl OsuChangeAction {
-    pub fn new(reader: &mut PacketReader) -> Self {
+    pub async fn new(reader: &mut PacketReader) -> Self {
         Self {
             id: Packets::OsuChangeAction as i16,
             action: reader.read_u8(),

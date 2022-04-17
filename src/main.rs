@@ -1,11 +1,18 @@
 #![allow(dead_code, unused_variables)]
 
 use actix_web::{get, App, HttpResponse, HttpServer, Responder, web};
+use thiserror::Error;
 extern crate futures;
 
 mod middlewares;
 mod routes;
 mod utils;
+
+#[derive(Error, Debug, PartialEq, Clone)]
+pub enum RedisError {
+    #[error("redis error `{0}`")]
+    RedisError(String)
+}
 
 #[get("/")]
 async fn index() -> impl Responder {
